@@ -66,7 +66,7 @@ class Capsule(BaseCapsule):
     # Define the input type, since this is a object detector, and doesn't
     # require any input from other capsules, the input type is a NodeDescription
     # with size None.
-    input_type = NodeDescription(size=NodeDescription.Size.NONE),
+    input_type = NodeDescription(size=NodeDescription.Size.NONE)
     # Define the output time, in this case, we are going to return a list of
     # bounding boxes so the output type would be size ALL.
     # The type of detection will be face, and we will have the confidence in
