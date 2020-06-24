@@ -1,0 +1,4 @@
+vcap==0.2.0
+vcap_utils==0.2.0
+brainframe-api==0.26.0.dev5
+itchat
