@@ -36,7 +36,7 @@ class Capsule(BaseCapsule):
     name = "fake_bounding_box_detector"
     description = "A fake detector that outputs a single bounding box"
     version = 1
-    # Define the input type, since this is a object detector, and doesn't
+    # Define the input type, since this is an object detector, and doesn't
     # require any input from other capsules, the input type is a NodeDescription
     # with size None
     input_type = NodeDescription(size=NodeDescription.Size.NONE)

@@ -63,7 +63,7 @@ class Capsule(BaseCapsule):
     name = "face_detector"
     description = "This is an example of how to wrap a TensorFlow Object Detection API Model"
     version = 1
-    # Define the input type, since this is a object detector, and doesn't
+    # Define the input type, since this is an object detector, and doesn't
     # require any input from other capsules, the input type is a NodeDescription
     # with size None.
     input_type = NodeDescription(size=NodeDescription.Size.NONE)
