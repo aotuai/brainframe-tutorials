@@ -10,7 +10,7 @@ class Backend(BaseBackend):
         print("Loading onto device: ", device)
         super().__init__()
 
-    # This is the function that dong the inference, we are just going to return
+    # This is the function that doing the inference, we are just going to return
     # a fake bounding box here.
     def process_frame(self, frame, detection_node: None, options, state):
         return [
@@ -20,8 +20,8 @@ class Backend(BaseBackend):
             )
         ]
 
-    # Batch process will help to improve the performance, we will skip it in this
-    # example.
+    # Batch process will help to improve the performance, we will skip it in
+    # this example.
     def batch_predict(self, input_data_list):
         pass
 

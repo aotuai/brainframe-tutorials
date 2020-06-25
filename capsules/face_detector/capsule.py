@@ -23,15 +23,17 @@ class Backend(TFObjectDetector):
         """
         :param frame: A numpy array of shape (height, width, 3)
         :param detection_node: None
-        :param options: Something like {"threshold": 0.5}, it's defined in capsule.
-        :param state: Ingnore this
+        :param options: Something like {"threshold": 0.5}, it's defined in
+                        capsule.
+        :param state: Ignore this
         :return:
         """
-        # We have already implemented the batch inference function for a TensorFlow
-        # object detector using TensorFlow's API. So here we will just send the frame
-        # to BrainFrame through send_to_batch() function. This function will return a
-        # queue. Once BrainFrame got the frames, it will process the use the batch_process
-        # function and write the results to the queue.
+        # We have already implemented the batch inference function for a
+        # TensorFlow object detector using TensorFlow's API. So here we will
+        # just send the frame to BrainFrame through send_to_batch() function.
+        # This function will return a queue. Once BrainFrame got the frames,
+        # it will process the use the batch_process function and write the
+        # results to the queue.
         prediction_output_queue = self.send_to_batch(frame)
         # Get the predictions when they are ready.
         predictions = prediction_output_queue.get()
@@ -44,9 +46,9 @@ class Backend(TFObjectDetector):
             # Filter out detection with low confidence.
             if prediction.confidence < options["threshold"]:
                 continue
-            # Create a DetectionNode with the prediction, it will be reused by other capsules
-            # if those capsules require a face DetectionNode as input type. For example, an age
-            # classifier.
+            # Create a DetectionNode with the prediction, it will be reused by
+            # other capsules if those capsules require a face DetectionNode as
+            # input type. For example, an age classifier.
             new_detection = DetectionNode(
                 name=prediction.name,
                 # convert [x1, y1, x2, y2] to [[x1,y1], [x1, y2]...]
@@ -61,7 +63,8 @@ class Backend(TFObjectDetector):
 class Capsule(BaseCapsule):
     # Metadata of this capsule
     name = "face_detector"
-    description = "This is an example of how to wrap a TensorFlow Object Detection API Model"
+    description = "This is an example of how to wrap a TensorFlow Object " \
+                  "Detection API Model"
     version = 1
     # Define the input type, since this is an object detector, and doesn't
     # require any input from other capsules, the input type is a NodeDescription
@@ -81,8 +84,9 @@ class Capsule(BaseCapsule):
         device=device,
         model_bytes=capsule_files["detector.pb"],
         metadata_bytes=capsule_files["dataset_metadata.json"])
-    # The options of this capsule, in the example, we allow the user to set the threshold
-    # of the min detection confidence in BrainFrame client or from REST API.
+    # The options of this capsule, in the example, we allow the user to set the
+    # threshold of the min detection confidence in BrainFrame client or from
+    # REST API.
     options = {
         "threshold": FloatOption(
             description="Filter out bad detections",
