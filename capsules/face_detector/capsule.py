@@ -26,7 +26,7 @@ class Backend(TFObjectDetector):
         :param options: Something like {"threshold": 0.5}, it's defined in
                         capsule.
         :param state: Ignore this
-        :return:
+        :return: A list of detections
         """
         # We have already implemented the batch inference function for a
         # TensorFlow object detector using TensorFlow's API. So here we will

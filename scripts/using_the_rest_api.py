@@ -1,15 +1,7 @@
 # Import necessary libraries
 import itchat as wechat
-from brainframe.api.bf_codecs import (
-    StreamConfiguration,
-    ConnType,
-    Zone,
-    ZoneAlarm,
-    ZoneAlarmCountCondition,
-    CountConditionTestType,
-    IntersectionPointType,
-)
-from brainframe.api import BrainFrameAPI
+from pathlib import Path
+from brainframe.api import BrainFrameAPI, bf_codecs
 
 # Initialize the API and connect to the server
 api = BrainFrameAPI("http://localhost")
@@ -20,15 +12,17 @@ wechat.send_msg(f"Notifications from BrainFrame have been enabled",
                 toUserName="filehelper")
 
 # Upload the local file to the database and create a storage id
-storage_id = api.new_storage(open("../videos/shopping_cashier_gone.mp4", "rb"),
-                             mime_type="application/octet-stream")
+storage_id = api.new_storage(
+    data=Path("../videos/shopping_cashier_gone.mp4").read_bytes(),
+    mime_type="application/octet-stream"
+)
 
 # Create a Stream Configuration with the storage id
-new_stream_config = StreamConfiguration(
+new_stream_config = bf_codecs.StreamConfiguration(
     # The display name on the client side
     name="Demo",
     # Type of the stream, for now we support ip cameras, web cams and video file
-    connection_type=ConnType.FILE,
+    connection_type=bf_codecs.ConnType.FILE,
     # The storage id of the file
     connection_options={
         "storage_id": storage_id,
@@ -45,33 +39,30 @@ api.start_analyzing(new_stream_config.id)
 
 # The trigger condition of the alarm
 # The condition is less than 1 person in the zone.
-no_cashier_alarm_condition = ZoneAlarmCountCondition(
-    test=CountConditionTestType.LESS_THAN,
+no_cashier_alarm_condition = bf_codecs.ZoneAlarmCountCondition(
+    test=bf_codecs.CountConditionTestType.LESS_THAN,
     check_value=1,
     with_class_name="person",
     with_attribute=None,
     window_duration=5.0,
     window_threshold=0.5,
-    intersection_point=IntersectionPointType.BOTTOM,
+    intersection_point=bf_codecs.IntersectionPointType.BOTTOM,
 )
 
 # Create a Zone Alarm
 # This alarm is active from 00:00:00 to 12:00:00 everyday, and will be triggered
 # if the detection results matches the above condition.
-no_cashier_alarm = ZoneAlarm(
-    # IDs will be assigned by BrainFrame
-    zone_id=None,
-    stream_id=None,
+no_cashier_alarm = bf_codecs.ZoneAlarm(
     name="No Cashier Here!",
     count_conditions=[no_cashier_alarm_condition],
     rate_conditions=[],
     use_active_time=False,
     active_start_time="00:00:00",
-    active_end_time="12:00:00",
+    active_end_time="12:00:00"
 )
 
 # Create a Zone object with the above alarm
-cashier_zone = Zone(
+cashier_zone = bf_codecs.Zone(
     name="Cashier",
     stream_id=new_stream_config.id,
     alarms=[no_cashier_alarm],
