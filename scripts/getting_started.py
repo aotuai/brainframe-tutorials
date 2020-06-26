@@ -9,22 +9,51 @@ api = BrainFrameAPI("http://localhost")
 stream_configs = api.get_stream_configurations()
 print("Existing streams: ", stream_configs)
 
-# Create a new new stream configuration codec
-new_stream_config = StreamConfiguration(
+# Create a new ip camera stream configuration codec
+new_ip_camera_stream_config = StreamConfiguration(
     # The display name on the client side
-    name="Test config",
-    # Type of the stream, for now we support ip cameras, web cams and video file
+    name="Ip Camera",
     connection_type=ConnType.IP_CAMERA,
     # The url of the ip camera
     connection_options={
-        "url": "rtsp:xxxxx",
+        "url": "your_ip_camera_url",
+    },
+    runtime_options={},
+    premises_id=None,
+)
+
+# Create a local file stream configuration codec
+new_web_camera_stream_config = StreamConfiguration(
+    # The display name on the client side
+    name="Web Camera",
+    connection_type=ConnType.WEBCAM,
+    # The device id of the web camera
+    connection_options={
+        "device_id": 0,
+    },
+    runtime_options={},
+    premises_id=None,
+)
+
+# Upload the local file to the database and create a storage id
+storage_id = api.new_storage(open("../videos/shopping_cashier_gone.mp4", "rb"),
+                             mime_type="application/octet-stream")
+# Create a local file stream configuration codec
+new_local_file_stream_config = StreamConfiguration(
+    # The display name on the client side
+    name="Local File",
+    connection_type=ConnType.FILE,
+    # The storage id of the file
+    connection_options={
+        "storage_id": storage_id,
     },
     runtime_options={},
     premises_id=None,
 )
 
 # Tell the server to connect to that stream configuration
-new_stream_config = api.set_stream_configuration(new_stream_config)
+new_local_file_stream_config = api.set_stream_configuration(
+    new_local_file_stream_config)
 
 # Tell the server to start analyzing the stream you just set
-api.start_analyzing(new_stream_config.id)
+api.start_analyzing(new_local_file_stream_config.id)

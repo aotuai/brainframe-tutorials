@@ -33,7 +33,7 @@ class Backend(BaseBackend):
 # Define the Capsule class
 class Capsule(BaseCapsule):
     # Metadata of this capsule
-    name = "fake_bounding_box_detector"
+    name = "detector_bounding_box_fake"
     description = "A fake detector that outputs a single bounding box"
     version = 1
     # Define the input type, since this is an object detector, and doesn't
