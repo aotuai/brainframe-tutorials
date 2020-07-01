@@ -1,5 +1,6 @@
 # Import the dependencies
 import math
+from pathlib import Path
 from argparse import ArgumentParser
 from brainframe.api import BrainFrameAPI, bf_codecs
 
@@ -53,6 +54,45 @@ def social_distancing(min_distance: int):
     """
     # Initialize the API
     api = BrainFrameAPI("http://localhost")
+
+    # Upload the local file to the database and create a storage id
+    storage_id = api.new_storage(
+        data=Path("../videos/social_distancing.mp4").read_bytes(),
+        mime_type="application/octet-stream"
+    )
+
+    # Create a Stream Configuration with the storage id
+    new_stream_config = bf_codecs.StreamConfiguration(
+        # The display name on the client side
+        name="Demo",
+        # Type of the stream, for now we support ip cameras, web cams and video
+        # file
+        connection_type=bf_codecs.ConnType.FILE,
+        # The storage id of the file
+        connection_options={
+            "storage_id": storage_id,
+        },
+        runtime_options={},
+        premises_id=None,
+    )
+
+    # Tell the server to connect to that stream configuration
+    new_stream_config = api.set_stream_configuration(new_stream_config)
+
+    # Filter out some overlapped detections
+    api.set_plugin_option_vals(plugin_name="detector_people_and_vehicles_fast",
+                               stream_id=new_stream_config.id,
+                               option_vals={
+                                   # If one bounding box is overlapped over 80%
+                                   # to another bounding box, we will filter it
+                                   # out.
+                                   "max_detection_overlap": 0.8,
+                                   "threshold": 0.9
+                               })
+
+    # Tell the server to start analyzing the stream you just set
+    api.start_analyzing(new_stream_config.id)
+
     assert len(api.get_stream_configurations()), \
         "There should be at least one stream already configured!"
     # Get the inference stream.
@@ -68,6 +108,9 @@ def social_distancing(min_distance: int):
 
         # Iterate over each stream_id, detections combination
         for stream_id, detections in detections_per_stream.items():
+            # Filter out Detection that is not a person
+            detections = [detection for detection in detections if
+                          detection.class_name == "person"]
             # If there are less than one person in the stream, you are safe.
             if len(detections) <= 0:
                 pass
@@ -77,6 +120,8 @@ def social_distancing(min_distance: int):
                 violating = False
                 for j in range(i + 1, len(detections)):
                     target_detection = detections[j]
+                    current_detection: bf_codecs.Detection
+                    target_detection: bf_codecs.Detection
                     # If the bbox representing two people are overlapped, the
                     # distance is 0, otherwise it's the distance between the
                     # center of these two bbox.
@@ -85,7 +130,9 @@ def social_distancing(min_distance: int):
                         else get_distance(current_detection, target_detection)
                     if distance < min_distance:
                         print(f"Some people violating social distancing rule, "
-                              f"current distance: {distance}")
+                              f"current distance: {distance}, location: "
+                              f"{current_detection.coords}, "
+                              f"{target_detection.coords}")
                         violating = True
                         break
                 if violating:
@@ -94,11 +141,11 @@ def social_distancing(min_distance: int):
 
 def main():
     parser = ArgumentParser()
-    parser.add_argument("--min-distance", type=int, default=100,
+    parser.add_argument("--min-distance", type=int, default=500,
                         help="The min distance allowed between two people")
     args = parser.parse_args()
     social_distancing(args.min_distance)
 
 
-if __name__ == "main":
+if __name__ == "__main__":
     main()
