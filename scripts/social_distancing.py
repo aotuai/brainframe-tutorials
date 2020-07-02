@@ -94,6 +94,8 @@ def social_distancing(min_distance: int):
     # Start analysis on the stream
     api.start_analyzing(new_stream_config.id)
 
+    print("Streaming started, scanning the social distancing rule...")
+
     # Verify that there is at least one connected stream
     assert len(api.get_stream_configurations()), \
         "There should be at least one stream already configured!"
