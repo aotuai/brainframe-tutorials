@@ -10,26 +10,26 @@ api = BrainFrameAPI("http://localhost")
 stream_configs = api.get_stream_configurations()
 print("Existing streams: ", stream_configs)
 
-# Create a new ip camera stream configuration codec
+# Create a new IP camera StreamConfiguration codec
 new_ip_camera_stream_config = bf_codecs.StreamConfiguration(
-    # The display name on the client side
-    name="Ip Camera",
+    # The display name on the client/in API responses
+    name="IP Camera",
     connection_type=bf_codecs.ConnType.IP_CAMERA,
-    # The url of the ip camera
     connection_options={
+        # The url of the IP camera
         "url": "your_ip_camera_url",
     },
     runtime_options={},
     premises_id=None,
 )
 
-# Create a local file stream configuration codec
+# Create a local file StreamConfiguration codec
 new_web_camera_stream_config = bf_codecs.StreamConfiguration(
-    # The display name on the client side
+    # The display name on the client/in API responses
     name="Webcam",
     connection_type=bf_codecs.ConnType.WEBCAM,
-    # The device id of the web camera
     connection_options={
+        # The device ID of the web camera
         "device_id": 0,
     },
     runtime_options={},
@@ -54,9 +54,9 @@ new_local_file_stream_config = bf_codecs.StreamConfiguration(
     premises_id=None,
 )
 
-# Tell the server to connect to that stream configuration
+# Tell the server to connect to the stream configuration
 new_local_file_stream_config = api.set_stream_configuration(
     new_local_file_stream_config)
 
-# Tell the server to start analyzing the stream you just set
+# Start analysis on the stream
 api.start_analyzing(new_local_file_stream_config.id)

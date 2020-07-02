@@ -1,17 +1,18 @@
 # Import the dependencies
 import math
-from pathlib import Path
 from argparse import ArgumentParser
+from pathlib import Path
+
 from brainframe.api import BrainFrameAPI, bf_codecs
 
 
-# Help function to check if two detection is overlapped
-def check_overlap(det1: bf_codecs.Detection,
+# Help function to check if two detections are overlapped
+def is_overlapped(det1: bf_codecs.Detection,
                   det2: bf_codecs.Detection) -> bool:
     """
-    :param det1: First bbox detection
-    :param det2: Second bbox detection
-    :return: If the two detections' bbox is overlapped
+    :param det1: First Detection
+    :param det2: Second Detection
+    :return: If the two Detections' bboxes are overlapped
     """
 
     # Sort the x, y in ascending order
@@ -20,31 +21,31 @@ def check_overlap(det1: bf_codecs.Detection,
     coords1_sorted_y = sorted([c[1] for c in det1.coords])
     coords2_sorted_y = sorted([c[1] for c in det2.coords])
 
-    # Return false if one rect is on the left side of the other
-    if coords1_sorted_x[0] > coords2_sorted_x[-1] or \
-            coords2_sorted_x[0] > coords1_sorted_x[-1]:
+    # Return False if the rects do not overlap horizontally
+    if coords1_sorted_x[0] > coords2_sorted_x[-1] \
+            or coords2_sorted_x[0] > coords1_sorted_x[-1]:
         return False
 
-    # Return false if one rect is on the top side of the other
-    if coords1_sorted_y[0] > coords2_sorted_y[-1] or \
-            coords2_sorted_y[0] > coords1_sorted_y[-1]:
+    # Return False if the rects do not overlap vertically
+    if coords1_sorted_y[0] > coords2_sorted_y[-1] \
+            or coords2_sorted_y[0] > coords1_sorted_y[-1]:
         return False
 
-    # Other wise return True
+    # Otherwise, the two rects must overlap
     return True
 
 
-# Help function to calculate the distance between the center point of two
+# Helper function to calculate the distance between the center points of two
 # detections
 def get_distance(det1: bf_codecs.Detection,
                  det2: bf_codecs.Detection) -> float:
     """
-    :param det1: First bbox detection
-    :param det2: First bbox detection
-    :return: Distance between the center of these two detections
+    :param det1: First Detection
+    :param det2: First Detection
+    :return: Distance between the center of the two Detections
     """
-    return math.sqrt((det1.center[0] - det2.center[0]) ** 2 +
-                     (det1.center[1] - det2.center[1]) ** 2)
+    return math.hypot(det1.center[0] - det2.center[0],
+                      det1.center[1] - det2.center[1])
 
 
 def social_distancing(min_distance: int):
@@ -55,20 +56,19 @@ def social_distancing(min_distance: int):
     # Initialize the API
     api = BrainFrameAPI("http://localhost")
 
-    # Upload the local file to the database and create a storage id
+    # Upload the local file to the database and get its storage ID
     storage_id = api.new_storage(
         data=Path("../videos/social_distancing.mp4").read_bytes(),
         mime_type="application/octet-stream"
     )
 
-    # Create a Stream Configuration with the storage id
+    # Create a Stream Configuration referencing the new storage ID
     new_stream_config = bf_codecs.StreamConfiguration(
         # The display name on the client side
         name="Demo",
-        # Type of the stream, for now we support ip cameras, web cams and video
-        # file
+        # This stream will be from a file
         connection_type=bf_codecs.ConnType.FILE,
-        # The storage id of the file
+        # The storage ID of the file
         connection_options={
             "storage_id": storage_id,
         },
@@ -76,25 +76,28 @@ def social_distancing(min_distance: int):
         premises_id=None,
     )
 
-    # Tell the server to connect to that stream configuration
+    # Tell the server to connect to the stream configuration
     new_stream_config = api.set_stream_configuration(new_stream_config)
 
-    # Filter out some overlapped detections
-    api.set_plugin_option_vals(plugin_name="detector_people_and_vehicles_fast",
-                               stream_id=new_stream_config.id,
-                               option_vals={
-                                   # If one bounding box is overlapped over 80%
-                                   # to another bounding box, we will filter it
-                                   # out.
-                                   "max_detection_overlap": 0.8,
-                                   "threshold": 0.9
-                               })
+    # Filter out duplicate detections
+    api.set_plugin_option_vals(
+        plugin_name="detector_people_and_vehicles_fast",
+        stream_id=new_stream_config.id,
+        option_vals={
+            # If one bounding box is overlapped >80% with another bounding box,
+            # we assume that they are really the same detection and ignore them.
+            "max_detection_overlap": 0.8,
+            "threshold": 0.9
+        }
+    )
 
-    # Tell the server to start analyzing the stream you just set
+    # Start analysis on the stream
     api.start_analyzing(new_stream_config.id)
 
+    # Verify that there is at least one connected stream
     assert len(api.get_stream_configurations()), \
         "There should be at least one stream already configured!"
+
     # Get the inference stream.
     for zone_status_packet in api.get_zone_status_stream():
         # Organize detections results as a dictionary of
@@ -106,17 +109,17 @@ def social_distancing(min_distance: int):
             if zone_name == "Screen"
         }
 
-        # Iterate over each stream_id, detections combination
+        # Iterate over each stream_id/detections combination
         for stream_id, detections in detections_per_stream.items():
-            # Filter out Detection that is not a person
-            detections = [detection for detection in detections if
-                          detection.class_name == "person"]
-            # If there are less than one person in the stream, you are safe.
-            if len(detections) <= 0:
-                pass
+            # Filter out Detections that are not people
+            detections = [detection for detection in detections
+                          if detection.class_name == "person"]
+
+            # Skip stream frame if there are no person detections
+            if len(detections) == 0:
+                continue
             # Compare the distance between each detections.
-            for i in range(0, len(detections)):
-                current_detection = detections[i]
+            for i, current_detection in enumerate(detections):
                 violating = False
                 for j in range(i + 1, len(detections)):
                     target_detection = detections[j]
@@ -125,19 +128,22 @@ def social_distancing(min_distance: int):
                     # If the bbox representing two people are overlapped, the
                     # distance is 0, otherwise it's the distance between the
                     # center of these two bbox.
-                    distance = 0 if check_overlap(current_detection,
-                                                  target_detection) \
-                        else get_distance(current_detection, target_detection)
+                    if is_overlapped(current_detection, target_detection):
+                        distance = 0
+                    else:
+                        distance = get_distance(current_detection,
+                                                target_detection)
+
                     if distance < min_distance:
-                        print(f"Some people violating social distancing rule, "
-                              f"current distance: {distance}, location: "
-                              f"{current_detection.coords}, "
-                              f"{target_detection.coords}")
+                        print(
+                            f"People are violating the social distancing rules, "
+                            f"current distance: {distance}, location: "
+                            f"{current_detection.coords}, "
+                            f"{target_detection.coords}")
                         violating = True
                         break
                 if violating:
                     break
-
 
 def main():
     parser = ArgumentParser()

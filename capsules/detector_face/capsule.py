@@ -23,22 +23,21 @@ class Backend(TFObjectDetector):
         """
         :param frame: A numpy array of shape (height, width, 3)
         :param detection_node: None
-        :param options: Something like {"threshold": 0.5}, it's defined in
-                        capsule.
-        :param state: Ignore this
+        :param options: Example: {"threshold": 0.5}. Defined in Capsule class above.
+        :param state: (Unused in this capsule)
         :return: A list of detections
         """
-        # We have already implemented the batch inference function for a
-        # TensorFlow object detector using TensorFlow's API. So here we will
-        # just send the frame to BrainFrame through send_to_batch() function.
-        # This function will return a queue. Once BrainFrame got the frames,
-        # it will process the use the batch_process function and write the
-        # results to the queue.
+
+        # Send the frame to the BrainFrame backend. This function will return a
+        # queue. BrainFrame will batch_process() received frames and populate
+        # the queue with the results.
         prediction_output_queue = self.send_to_batch(frame)
-        # Get the predictions when they are ready.
+
+        # Wait for predictions
         predictions = prediction_output_queue.get()
-        detection_node = []
-        # Iterate through all the predictions we got in this frame.
+
+        # Iterate through all the predictions received in this frame
+        detection_nodes = []
         for prediction in predictions:
             # Filter out detections that is not a face.
             if prediction.name != "face":
@@ -46,17 +45,20 @@ class Backend(TFObjectDetector):
             # Filter out detection with low confidence.
             if prediction.confidence < options["threshold"]:
                 continue
-            # Create a DetectionNode with the prediction, it will be reused by
-            # other capsules if those capsules require a face DetectionNode as
-            # input type. For example, an age classifier.
+
+            # Create a DetectionNode for the prediction. It will be reused by
+            # any other capsules that require a face DetectionNode in their
+            # input type. An age classifier capsule would be an example of such
+            # a capsule.
             new_detection = DetectionNode(
                 name=prediction.name,
                 # convert [x1, y1, x2, y2] to [[x1,y1], [x1, y2]...]
                 coords=rect_to_coords(prediction.rect),
                 extra_data={"detection_confidence": prediction.confidence}
             )
-            detection_node.append(new_detection)
-        return detection_node
+            detection_nodes.append(new_detection)
+
+        return detection_nodes
 
 
 # Define the Capsule class
@@ -64,29 +66,32 @@ class Capsule(BaseCapsule):
     # Metadata of this capsule
     name = "face_detector"
     description = "This is an example of how to wrap a TensorFlow Object " \
-                  "Detection API Model"
+                  "Detection API model"
     version = 1
-    # Define the input type, since this is an object detector, and doesn't
-    # require any input from other capsules, the input type is a NodeDescription
-    # with size None.
+
+    # Define the input type. Since this is an object detector, and doesn't
+    # require any input from other capsules, the input type will be a
+    # NodeDescription with size=NONE.
     input_type = NodeDescription(size=NodeDescription.Size.NONE)
-    # Define the output time, in this case, we are going to return a list of
-    # bounding boxes so the output type would be size ALL.
-    # The type of detection will be face, and we will have the confidence in
-    # extra data.
+
+    # Define the output type. In this case, as we are going to return a list of
+    # bounding boxes, the output type will be size=ALL. The type of detection
+    # will be "face", and we will place the detection confidence in extra_data.
     output_type = NodeDescription(
         size=NodeDescription.Size.ALL,
         detections=["face"],
         extra_data=["detection_confidence"]
     )
+
     # Define the backend_loader
     backend_loader = lambda capsule_files, device: Backend(
         device=device,
         model_bytes=capsule_files["detector.pb"],
         metadata_bytes=capsule_files["dataset_metadata.json"])
-    # The options of this capsule, in the example, we allow the user to set the
-    # threshold of the min detection confidence in BrainFrame client or from
-    # REST API.
+
+    # The options for this capsule. In this example, we will allow the user to
+    # set a threshold for the minimum detection confidence. This can be adjusted
+    # using the BrainFrame client or through REST API.
     options = {
         "threshold": FloatOption(
             description="Filter out bad detections",
