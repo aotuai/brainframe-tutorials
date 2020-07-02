@@ -1,6 +1,6 @@
 # Import necessary libraries
-import itchat as wechat
 from pathlib import Path
+import itchat as wechat
 from brainframe.api import BrainFrameAPI, bf_codecs
 
 # Initialize the API and connect to the server
@@ -11,34 +11,35 @@ wechat.auto_login()
 wechat.send_msg(f"Notifications from BrainFrame have been enabled",
                 toUserName="filehelper")
 
-# Upload the local file to the database and create a storage id
+# Upload the local file to the BrainFrame server's database and get its storage
+# ID
 storage_id = api.new_storage(
     data=Path("../videos/shopping_cashier_gone.mp4").read_bytes(),
     mime_type="application/octet-stream"
 )
 
-# Create a Stream Configuration with the storage id
+# Create a StreamConfiguration with the storage ID
 new_stream_config = bf_codecs.StreamConfiguration(
     # The display name on the client side
     name="Demo",
-    # Type of the stream, for now we support ip cameras, web cams and video file
+    # Specify that we're using a file
     connection_type=bf_codecs.ConnType.FILE,
-    # The storage id of the file
     connection_options={
+        # The storage id of the file
         "storage_id": storage_id,
     },
     runtime_options={},
     premises_id=None,
 )
 
-# Tell the server to connect to that stream configuration
+# Send the StreamConfiguration to the server to have it connect
 new_stream_config = api.set_stream_configuration(new_stream_config)
 
-# Tell the server to start analyzing the stream you just set
+# Tell the server to start analysis on the new stream
 api.start_analyzing(new_stream_config.id)
 
-# The trigger condition of the alarm
-# The condition is less than 1 person in the zone.
+# Condition for the Alarm that will trigger when there is <1 person in the zone
+# that it is assigned to
 no_cashier_alarm_condition = bf_codecs.ZoneAlarmCountCondition(
     test=bf_codecs.CountConditionTestType.LESS_THAN,
     check_value=1,
@@ -49,16 +50,16 @@ no_cashier_alarm_condition = bf_codecs.ZoneAlarmCountCondition(
     intersection_point=bf_codecs.IntersectionPointType.BOTTOM,
 )
 
-# Create a Zone Alarm
-# This alarm is active from 00:00:00 to 12:00:00 everyday, and will be triggered
-# if the detection results matches the above condition.
+# Create the ZoneAlarm. It will be active all day, everyday and will be
+# triggered if the detection results satisfy the condition we created. Because
+# use_active_time==False, the active end/start times will be ignored.
 no_cashier_alarm = bf_codecs.ZoneAlarm(
-    name="No Cashier Here!",
+    name="Missing Cashier!",
     count_conditions=[no_cashier_alarm_condition],
     rate_conditions=[],
     use_active_time=False,
     active_start_time="00:00:00",
-    active_end_time="12:00:00"
+    active_end_time="23:59:59",
 )
 
 # Create a Zone object with the above alarm
@@ -69,7 +70,7 @@ cashier_zone = bf_codecs.Zone(
     coords=[[513, 695], [223, 659], [265, 340], [513, 280], [578, 462]]
 )
 
-# Tell BrainFrame to create the Zone
+# Send the Zone to BrainFrame
 api.set_zone(cashier_zone)
 
 # Get the one single zone status and print out, mostly likely you will get
@@ -88,17 +89,19 @@ for zone_status_packet in zone_status_iterator:
         for zone_name, zone_status in zone_statuses.items():
             for alert in zone_status.alerts:
                 # Check if the alert has ended
-                if alert.end_time is not None:
-                    total_time = alert.end_time - alert.start_time
-                    # Check if the alert lasts for more than 5 seconds
-                    if total_time > 5:
-                        alarm = api.get_zone_alarm(alert.alarm_id)
-                        wechat.send_msg(
-                            f"BrainFrame Alert: {alarm.name} "
-                            f"Duration {total_time}", toUserName="filehelper")
-                        keep_looping = False
-    if not keep_looping:
-        break
+                if alert.end_time is None:
+                    continue
 
-# Logout your WeChat account
-wechat.logout()
+                total_time = alert.end_time - alert.start_time
+                # Check if the alert lasted for more than 5 seconds
+                if total_time > 5:
+                    alarm = api.get_zone_alarm(alert.alarm_id)
+                    wechat.send_msg(
+                        f"BrainFrame Alert: {alarm.name} \n"
+                        f"Duration {total_time}", toUserName="filehelper")
+
+                    # Log out your WeChat account
+                    wechat.logout()
+
+                    # Stop here, for demo purposes
+                    exit()
