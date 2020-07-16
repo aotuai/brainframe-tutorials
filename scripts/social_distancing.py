@@ -67,7 +67,7 @@ def social_distancing(min_distance: int):
         # The display name on the client side
         name="Demo",
         # This stream will be from a file
-        connection_type=bf_codecs.ConnType.FILE,
+        connection_type=bf_codecs.StreamConfiguration.ConnType.FILE,
         # The storage ID of the file
         connection_options={
             "storage_id": storage_id,
