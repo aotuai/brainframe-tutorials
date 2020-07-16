@@ -14,7 +14,7 @@ print("Existing streams: ", stream_configs)
 new_ip_camera_stream_config = bf_codecs.StreamConfiguration(
     # The display name on the client/in API responses
     name="IP Camera",
-    connection_type=bf_codecs.ConnType.IP_CAMERA,
+    connection_type=bf_codecs.StreamConfiguration.ConnType.IP_CAMERA,
     connection_options={
         # The url of the IP camera
         "url": "your_ip_camera_url",
@@ -27,7 +27,7 @@ new_ip_camera_stream_config = bf_codecs.StreamConfiguration(
 new_web_camera_stream_config = bf_codecs.StreamConfiguration(
     # The display name on the client/in API responses
     name="Webcam",
-    connection_type=bf_codecs.ConnType.WEBCAM,
+    connection_type=bf_codecs.StreamConfiguration.ConnType.WEBCAM,
     connection_options={
         # The device ID of the web camera
         "device_id": 0,
@@ -45,7 +45,7 @@ storage_id = api.new_storage(
 new_local_file_stream_config = bf_codecs.StreamConfiguration(
     # The display name on the client side
     name="Local File",
-    connection_type=bf_codecs.ConnType.FILE,
+    connection_type=bf_codecs.StreamConfiguration.ConnType.FILE,
     # The storage id of the file
     connection_options={
         "storage_id": storage_id,

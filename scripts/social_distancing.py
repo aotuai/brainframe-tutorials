@@ -80,8 +80,8 @@ def social_distancing(min_distance: int):
     new_stream_config = api.set_stream_configuration(new_stream_config)
 
     # Filter out duplicate detections
-    api.set_plugin_option_vals(
-        plugin_name="detector_people_and_vehicles_fast",
+    api.set_capsule_option_vals(
+        capsule_name="detector_people_and_vehicles_fast",
         stream_id=new_stream_config.id,
         option_vals={
             # If one bounding box is overlapped >80% with another bounding box,

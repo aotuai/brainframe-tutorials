@@ -9,7 +9,7 @@ from brainframe.api import BrainFrameAPI
 api = BrainFrameAPI("http://localhost")
 
 # Get the names of existing capsules
-loaded_capsules = api.get_plugins()
+loaded_capsules = api.get_capsules()
 loaded_capsules_names = [capsule.name for capsule in loaded_capsules]
 
 # Print out the capsules names
@@ -32,7 +32,7 @@ for image_path in IMAGE_ARCHIVE.iterdir():
         # Image array
         img_bgr=image_array,
         # The names of capsules to enable while processing the image
-        plugin_names=["detector_people_and_vehicles_fast"],
+        capsule_names=["detector_people_and_vehicles_fast"],
         # The capsule options you want to set. You can check the available
         # capsule options with the client. Or in the code snippet above that
         # printed capsule names, also print the capsule metadata.

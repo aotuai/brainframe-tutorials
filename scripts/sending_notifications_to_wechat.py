@@ -23,7 +23,7 @@ new_stream_config = bf_codecs.StreamConfiguration(
     # The display name on the client side
     name="Demo",
     # Specify that we're using a file
-    connection_type=bf_codecs.ConnType.FILE,
+    connection_type=bf_codecs.StreamConfiguration.ConnType.FILE,
     connection_options={
         # The storage id of the file
         "storage_id": storage_id,
@@ -41,7 +41,7 @@ api.start_analyzing(new_stream_config.id)
 # Condition for the Alarm that will trigger when there is <1 person in the zone
 # that it is assigned to
 no_cashier_alarm_condition = bf_codecs.ZoneAlarmCountCondition(
-    test=bf_codecs.CountConditionTestType.LESS_THAN,
+    test=bf_codecs.ZoneAlarmCountCondition.TestType.LESS_THAN,
     check_value=1,
     with_class_name="person",
     with_attribute=None,
