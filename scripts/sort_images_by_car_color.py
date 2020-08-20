@@ -1,5 +1,6 @@
 # Import necessary libraries
 from pathlib import Path
+import shutil
 
 import cv2
 
@@ -16,7 +17,7 @@ loaded_capsules_names = [capsule.name for capsule in loaded_capsules]
 print(f"Loaded Capsules: {loaded_capsules_names}")
 
 # Root directory containing the images.
-IMAGE_ARCHIVE = Path("../images/people_and_cats")
+IMAGE_ARCHIVE = Path("../images/cars")
 
 # Iterate through all images in the directory
 for image_path in IMAGE_ARCHIVE.iterdir():
@@ -32,27 +33,33 @@ for image_path in IMAGE_ARCHIVE.iterdir():
         # Image array
         img_bgr=image_array,
         # The names of capsules to enable while processing the image
-        capsule_names=["detector_people_and_vehicles_fast"],
+        capsule_names=["classifier_vehicle_color_openvino",
+                       "detector_person_vehicle_bike_openvino"],
         # The capsule options you want to set. You can check the available
         # capsule options with the client. Or in the code snippet above that
         # printed capsule names, also print the capsule metadata.
-        option_vals={
-            "detector_people_and_vehicles_fast": {
-                # This capsule is able to detect people, vehicles, and animals.
-                # In this example we want to filter out detections that are not
-                # animals.
-                "filter_mode": "only_animals",
-                "threshold": 0.9,
-            }
-        }
+        option_vals={}
     )
 
     print()
     print(f"Processed image {image_path.name} and got {detections}")
 
-    # Filter the cat detections using the class name
-    cat_detections = [detection for detection in detections
-                      if detection.class_name == "cat"]
+    car_detections = [detection for detection in detections if
+                      detection.class_name == "vehicle"]
 
-    if len(cat_detections) > 0:
-        print(f"This image contains {len(cat_detections)} cat(s)")
+    if len(car_detections) != 1:
+        print("No car or more and one car detected in this image, skip.")
+        continue
+
+    color = car_detections[0].attributes["color"]
+    color_folder = IMAGE_ARCHIVE / color
+
+    if not color_folder.exists():
+        color_folder.mkdir()
+
+    shutil.copy(str(image_path), str(color_folder))
+
+
+
+
+
