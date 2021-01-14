@@ -1,15 +1,10 @@
 # Import necessary libraries
 from pathlib import Path
-import itchat as wechat
 from brainframe.api import BrainFrameAPI, bf_codecs
+import requests
 
 # Initialize the API and connect to the server
 api = BrainFrameAPI("http://localhost")
-
-# Login to your WeChat account and send a message to the filehelper
-wechat.auto_login()
-wechat.send_msg(f"Notifications from BrainFrame have been enabled",
-                toUserName="filehelper")
 
 # Upload the local file to the BrainFrame server's database and get its storage
 # ID
@@ -96,12 +91,18 @@ for zone_status_packet in zone_status_iterator:
                 # Check if the alert lasted for more than 5 seconds
                 if total_time > 5:
                     alarm = api.get_zone_alarm(alert.alarm_id)
-                    wechat.send_msg(
-                        f"BrainFrame Alert: {alarm.name} \n"
-                        f"Duration {total_time}", toUserName="filehelper")
 
-                    # Log out your WeChat account
-                    wechat.logout()
-
+                    send_url = \
+                        'https://slsapi.aotu.ai/dev/ruijiao/wechat-business' \
+                        '-notications'
+                    message = {
+                        "message": f"BrainFrame Alert: {alarm.name} \n"
+                                   f"Duration {total_time}",
+                        "touser": "ErNiu",
+                        "password": "40394039"
+                    }
+                    response = requests.post(url=send_url, json=message)
+                    if not response.ok:
+                        print(response.text)
                     # Stop here, for demo purposes
                     exit()
