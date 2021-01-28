@@ -2,6 +2,8 @@
 from pathlib import Path
 from brainframe.api import BrainFrameAPI, bf_codecs
 import requests
+import cv2
+import base64
 
 # Initialize the API and connect to the server
 api = BrainFrameAPI("http://localhost")
@@ -91,16 +93,24 @@ for zone_status_packet in zone_status_iterator:
                 # Check if the alert lasted for more than 5 seconds
                 if total_time > 5:
                     alarm = api.get_zone_alarm(alert.alarm_id)
+                    screenshot = api.get_alert_frame(alert.id)
+                    is_success, im_buf_arr = cv2.imencode(".jpeg", screenshot)
+                    img_bytes = im_buf_arr.tobytes()
+                    img_b64 = base64.b64encode(img_bytes).decode("utf8")
 
                     send_url = \
-                        'https://slsapi.aotu.ai/dev/ruijiao/wechat-business' \
+                        'https://slsapi.aotu.ai/dev-zhao/ruijiao/wechat' \
+                        '-business' \
                         '-notications'
                     message = {
                         "message": f"BrainFrame Alert: {alarm.name} \n"
                                    f"Duration {total_time}",
                         "touser": "ErNiu",
-                        "password": "40394039"
+                        "password": "40394039",
+                        "image": img_b64,
+                        "image_type": "jpeg",
                     }
+
                     response = requests.post(url=send_url, json=message)
                     if not response.ok:
                         print(response.text)

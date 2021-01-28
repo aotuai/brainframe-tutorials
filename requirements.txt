@@ -2,3 +2,5 @@ vcap
 vcap_utils
 brainframe-api
 itchat
+requests
+opencv-contrib-python
