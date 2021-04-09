@@ -98,14 +98,11 @@ for zone_status_packet in zone_status_iterator:
                     img_bytes = im_buf_arr.tobytes()
                     img_b64 = base64.b64encode(img_bytes).decode("utf8")
 
-                    send_url = \
-                        'https://slsapi.aotu.ai/dev-zhao/ruijiao/wechat' \
-                        '-business' \
-                        '-notications'
+                    send_url = "https://api.brainframe.cn/dev-zhao/ruijiao/wechat-business-notications"
                     message = {
                         "message": f"BrainFrame Alert: {alarm.name} \n"
                                    f"Duration {total_time}",
-                        "touser": "ErNiu",
+                        "touser": "ErNiu|Si",
                         "password": "40394039",
                         "image": img_b64,
                         "image_type": "jpeg",
